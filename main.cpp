@@ -1,3 +1,4 @@
+#include <bits/stdc++.h>
 #include <iostream>
 #include <vector>
 #include <unordered_map>
@@ -58,7 +59,7 @@ public:
     void addConnection(GameEntity* entity) override {
         connections.push_back(entity);
     }
-
+    
     void displayConnections() const override {
         cout << "Connections for " << getName() << ": ";
         for (const GameEntity* connectedEntity : connections) {
@@ -98,7 +99,7 @@ public:
     }
 
     void defend() override {
-        // NPC doesn't defend in this example
+        // NPC doesn't defend
     }
 
     bool isDefeated() const override {
@@ -166,6 +167,9 @@ public:
         cout << endl;
     }
 
+    const vector<GameEntity*>& getConnections() const {
+        return connections;
+    }
 private:
     string name;
     vector<GameEntity*> connections;
@@ -179,10 +183,18 @@ public:
 
     void connectAreas(Area* area1, Area* area2) {
         if (area1 && area2) {
-            areas.push_back(area1);
-            areas.push_back(area2);
+            // Check if the areas are not already connected
+            if (find(area1->getConnections().begin(), area1->getConnections().end(), area2) == area1->getConnections().end()) {
+                area1->addConnection(area2);
+            }
+
+            if (find(area2->getConnections().begin(), area2->getConnections().end(), area1) == area2->getConnections().end()) {
+                area2->addConnection(area1);
+            }
         }
     }
+
+
 
     void connectEntities(GameEntity* entity1, GameEntity* entity2) {
         if (entity1 && entity2) {
@@ -247,7 +259,6 @@ public:
         cout << "Hello, " << playerName << "! Let's start the game." << endl;
 
         while (!player->isDefeated()) {
-            cout << "Debug: Current Area Pointer: " << currentArea << endl;
             // Display information about the current area
             cout << "Current Area: " << currentArea->getName() << endl;
             currentArea->displayInfo();
@@ -298,35 +309,45 @@ private:
     }
 
     void playerTurn() {
-        cout << "Choose your action:" << endl;
-        cout << "1. Attack" << endl;
-        cout << "2. Defend" << endl;
+        bool allEnemiesDefeated = false;
 
-        int choice;
-        cout << "Enter your choice (1-2): ";
-        cin >> choice;
+        do {
+            cout << "Choose your action:" << endl;
+            cout << "1. Attack" << endl;
+            cout << "2. Defend" << endl;
 
-        if (choice == 1) {
-            // Player attacks each enemy in the current area
-            const vector<GameEntity*>& entities = gameGraph.getEntities(currentArea);
-            for (GameEntity* entity : entities) {
-                NonPlayerCharacter* npc = dynamic_cast<NonPlayerCharacter*>(entity);
-                if (npc && !npc->isDefeated()) {
-                    int damage = player->attack();
-                    cout << player->getName() << " attacks " << entity->getName() << " with damage: " << damage << endl;
-                    entity->takeDamage(damage);
-                    if (entity->isDefeated()) {
-                        cout << entity->getName() << " is defeated!" << endl;
+            int choice;
+            cout << "Enter your choice (1-2): ";
+            cin >> choice;
+
+            if (choice == 1) {
+                // Player attacks each enemy in the current area
+                const vector<GameEntity*>& entities = gameGraph.getEntities(currentArea);
+                allEnemiesDefeated = true;  // Asumsikan semua musuh telah dikalahkan, kecuali ditemukan musuh yang belum dikalahkan
+                for (GameEntity* entity : entities) {
+                    NonPlayerCharacter* npc = dynamic_cast<NonPlayerCharacter*>(entity);
+                    if (npc && !npc->isDefeated()) {
+                        int damage = player->attack();
+                        cout << player->getName() << " attacks " << entity->getName() << " with damage: " << damage << endl;
+                        entity->takeDamage(damage);
+                        if (entity->isDefeated()) {
+                            cout << entity->getName() << " is defeated!" << endl;
+                        }
+                        // Periksa apakah masih ada musuh yang belum dikalahkan
+                        if (!entity->isDefeated()) {
+                            allEnemiesDefeated = false;
+                        }
                     }
                 }
+            } else if (choice == 2) {
+                player->defend();
+                cout << player->getName() << " is defending." << endl;
+            } else {
+                cout << "Invalid choice. Player loses turn." << endl;
             }
-        } else if (choice == 2) {
-            player->defend();
-            cout << player->getName() << " is defending." << endl;
-        } else {
-            cout << "Invalid choice. Player loses turn." << endl;
-        }
+        } while (!allEnemiesDefeated);  // Ulangi tindakan pemain jika masih ada musuh yang belum dikalahkan
     }
+
 
     void npcTurn() {
         // NPCs attack the player
@@ -355,17 +376,27 @@ private:
         }
 
         const vector<GameEntity*>& connections = gameGraph.getEntities(currentArea);
+        bool moveSuccessful = false;
+
         for (GameEntity* entity : connections) {
             Area* connectedArea = dynamic_cast<Area*>(entity);
             if (connectedArea && connectedArea->getName() == chosenArea) {
-                return connectedArea;
+                currentArea = connectedArea;  // Move to the new area
+                moveSuccessful = true;
+                break;
             }
         }
 
-        cout << "Invalid choice. Moving to a random connected area." << endl;
-        return dynamic_cast<Area*>(connections[rand() % connections.size()]);
-    }
+        if (!moveSuccessful) {
+            cout << "Invalid choice. Moving to a random connected area." << endl;
 
+            // Select a random connected area
+            const vector<Area*>& connectedAreas = gameGraph.getAreas();
+            currentArea = connectedAreas[rand() % connectedAreas.size()];
+        }
+
+        return currentArea;
+    }
 
     bool allEnemiesDefeated() const {
         const vector<GameEntity*>& entities = gameGraph.getEntities(currentArea);
@@ -392,6 +423,7 @@ private:
 
         return true;  // Semua musuh sudah dikalahkan
     }
+
 
 
     void endGame() {
@@ -433,8 +465,18 @@ int main() {
 
     // Connect areas in the graph
     gameGraph.connectAreas(hometown, barren);
+    gameGraph.connectAreas(hometown, sea);
+
+    gameGraph.connectAreas(barren, hometown);
     gameGraph.connectAreas(barren, sea);
+    gameGraph.connectAreas(barren, volcano);
+
+    gameGraph.connectAreas(sea, hometown);
+    gameGraph.connectAreas(sea, barren);
     gameGraph.connectAreas(sea, volcano);
+
+    gameGraph.connectAreas(volcano, barren);
+    gameGraph.connectAreas(volcano, sea);
 
     // Start the game
     Game game(gameGraph, hometown);  // Set hometown as the starting area
