@@ -194,8 +194,6 @@ public:
         }
     }
 
-
-
     void connectEntities(GameEntity* entity1, GameEntity* entity2) {
         if (entity1 && entity2) {
             entities[entity1].push_back(entity2);
@@ -362,40 +360,41 @@ private:
     }
 
     Area* getNextArea() {
-        cout << "Choose the next area to explore:" << endl;
-        currentArea->displayConnections();  // Display connections for the current area
+    cout << "Choose the next area to explore:" << endl;
+    currentArea->displayConnections();  // Display connections for the current area
 
-        string chosenArea;
-        cout << "Enter the name of the area ('exit' to end the game): ";
-        cin >> chosenArea;
+    string chosenArea;
+    cout << "Enter the name of the area ('exit' to end the game): ";
+    cin >> chosenArea;
 
-        if (chosenArea == "exit") {
-            // Player chooses to exit the game
-            endGame();
-            return nullptr;
+    if (chosenArea == "exit") {
+        // Player chooses to exit the game
+        endGame();
+        return nullptr;
+    }
+
+    const vector<GameEntity*>& connections = currentArea->getConnections();
+    bool moveSuccessful = false;
+
+    for (const GameEntity* entity : connections) {
+        const Area* connectedArea = dynamic_cast<const Area*>(entity);
+        if (connectedArea && connectedArea->getName() == chosenArea) {
+            currentArea = const_cast<Area*>(connectedArea);  // Move to the new area
+            moveSuccessful = true;
+            break;
         }
+    }
 
-        const vector<GameEntity*>& connections = gameGraph.getEntities(currentArea);
-        bool moveSuccessful = false;
+    if (!moveSuccessful) {
+        cout << "Invalid choice. Moving to a random connected area." << endl;
 
-        for (GameEntity* entity : connections) {
-            Area* connectedArea = dynamic_cast<Area*>(entity);
-            if (connectedArea && connectedArea->getName() == chosenArea) {
-                currentArea = connectedArea;  // Move to the new area
-                moveSuccessful = true;
-                break;
-            }
-        }
+        // Select a random connected area
+        const vector<Area*>& connectedAreas = gameGraph.getAreas();
+        currentArea = connectedAreas[rand() % connectedAreas.size()];
+    }
 
-        if (!moveSuccessful) {
-            cout << "Invalid choice. Moving to a random connected area." << endl;
+    return currentArea;
 
-            // Select a random connected area
-            const vector<Area*>& connectedAreas = gameGraph.getAreas();
-            currentArea = connectedAreas[rand() % connectedAreas.size()];
-        }
-
-        return currentArea;
     }
 
     bool allEnemiesDefeated() const {
