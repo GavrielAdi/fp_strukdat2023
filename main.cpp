@@ -18,7 +18,7 @@ public:
 
 class Player : public GameEntity {
 public:
-    Player(string name, int health) : name(name), health(health) {}
+    Player(string name, int health) : name(name), health(health), healthPotion(3) {}
 
     string getName() const override {
         return name;
@@ -63,9 +63,25 @@ public:
         cout << endl;
     }
 
+    int getHealth() const {
+       return health;
+    }
+
+    void useHealthPotion() {
+        if (healthPotion > 0) {
+            health += 20; // Atur sesuai dengan jumlah kesehatan yang ingin ditambahkan
+            healthPotion--;
+            cout << getName() << " uses a health potion. Health restored!" << endl;
+            cout << "Current health: " << health << endl;
+        } else {
+            cout << "No health potions left." << endl;
+        }
+    }
+
 private:
     string name;
     int health;
+    int healthPotion;
     bool defending = false;
     vector<GameEntity*> connections;
 };
@@ -274,9 +290,6 @@ public:
                 break;
             }
 
-            // NPC's turn
-            npcTurn();
-
             // Choose the next area to explore
             currentArea = getNextArea();
 
@@ -313,11 +326,12 @@ private:
             if (currentArea->getName() != "Hometown") {
                 cout << "1. Attack" << endl;
                 cout << "2. Defend" << endl;
+                cout << "3. Use Health Potion" << endl;
             }
-            cout << "3. Move to a different area" << endl;
+            cout << "4. Move to a different area" << endl;
 
             int choice;
-            cout << "Enter your choice (1-3): ";
+            cout << "Enter your choice (1-4): ";
             cin >> choice;
 
             if (currentArea->getName() == "Hometown" && choice == 1) {
@@ -342,10 +356,21 @@ private:
                         }
                     }
                 }
+                // Enemy Turn
+                npcTurn();
+                
+                // Cek apakah kesehatan pemain mencapai 0
+                if (player->isDefeated()) {
+                    endGame();
+                    return;
+                }
             } else if (choice == 2 && currentArea->getName() != "Hometown") {
                 player->defend();
                 cout << player->getName() << " is defending." << endl;
-            } else if (choice == 3) {
+            } else if (choice == 3 && currentArea->getName() != "Hometown") {
+                // Opsi untuk menggunakan health potion
+                player->useHealthPotion();
+            } else if (choice == 4) {
                 break; // Keluar dari loop dan pindah ke area berikutnya setelah pemain menyelesaikan tindakannya
             } else {
                 cout << "Invalid choice. Player loses turn." << endl;
@@ -361,6 +386,7 @@ private:
                 int damage = entity->attack();
                 cout << entity->getName() << " attacks " << player->getName() << " with damage: " << damage << endl;
                 player->takeDamage(damage);
+                cout << player->getName() << "'s health: " << player->getHealth() << endl;
             }
         }
     }
