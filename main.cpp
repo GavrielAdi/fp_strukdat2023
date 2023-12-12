@@ -113,6 +113,10 @@ public:
         cout << endl;
     }
 
+    int getHealth() const {
+        return health;
+    }
+
 private:
     string name;
     string role;
@@ -306,14 +310,19 @@ private:
 
         do {
             cout << "Choose your action:" << endl;
-            cout << "1. Attack" << endl;
-            cout << "2. Defend" << endl;
+            if (currentArea->getName() != "Hometown") {
+                cout << "1. Attack" << endl;
+                cout << "2. Defend" << endl;
+            }
+            cout << "3. Move to a different area" << endl;
 
             int choice;
-            cout << "Enter your choice (1-2): ";
+            cout << "Enter your choice (1-3): ";
             cin >> choice;
 
-            if (choice == 1) {
+            if (currentArea->getName() == "Hometown" && choice == 1) {
+                cout << "Invalid choice. You can only move to a different area." << endl;
+            } else if (choice == 1 && currentArea->getName() != "Hometown") {
                 // Player attacks each enemy in the current area
                 const vector<GameEntity*>& entities = gameGraph.getEntities(currentArea);
                 allEnemiesDefeated = true;  // Asumsikan semua musuh telah dikalahkan, kecuali ditemukan musuh yang belum dikalahkan
@@ -323,6 +332,7 @@ private:
                         int damage = player->attack();
                         cout << player->getName() << " attacks " << entity->getName() << " with damage: " << damage << endl;
                         entity->takeDamage(damage);
+                        cout << entity->getName() << "'s health: " << npc->getHealth() << endl;
                         if (entity->isDefeated()) {
                             cout << entity->getName() << " is defeated!" << endl;
                         }
@@ -332,15 +342,16 @@ private:
                         }
                     }
                 }
-            } else if (choice == 2) {
+            } else if (choice == 2 && currentArea->getName() != "Hometown") {
                 player->defend();
                 cout << player->getName() << " is defending." << endl;
+            } else if (choice == 3) {
+                break; // Keluar dari loop dan pindah ke area berikutnya setelah pemain menyelesaikan tindakannya
             } else {
                 cout << "Invalid choice. Player loses turn." << endl;
             }
         } while (!allEnemiesDefeated);  // Ulangi tindakan pemain jika masih ada musuh yang belum dikalahkan
     }
-
 
     void npcTurn() {
         // NPCs attack the player
