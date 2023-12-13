@@ -69,7 +69,6 @@ public:
     }
     
     void displayConnections() const override {
-        cout << "Connections for " << getName() << ": ";
         for (const GameEntity* connectedEntity : connections) {
             cout << connectedEntity->getName() << " ";
         }
@@ -135,7 +134,6 @@ public:
     }
 
     void displayConnections() const override {
-        cout << "Connections for " << getName() << ": ";
         for (const GameEntity* connectedEntity : connections) {
             cout << connectedEntity->getName() << " ";
         }
@@ -188,7 +186,6 @@ public:
     }
 
     void displayConnections() const override {
-        cout << "Connections for " << getName() << ": ";
         for (const GameEntity* connectedEntity : connections) {
             cout << connectedEntity->getName() << " ";
         }
@@ -239,11 +236,8 @@ public:
 
     void displayConnections() const {
         for (const auto& entry : areas) {
-            std::cout << "Connections for " << entry->getName() << ": ";
             for (const auto& connectedArea : areas) {
-                std::cout << connectedArea->getName() << " ";
             }
-            std::cout << std::endl;
         }
     }
 
