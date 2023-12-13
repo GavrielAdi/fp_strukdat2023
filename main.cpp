@@ -31,6 +31,19 @@ public:
     int attack() const override {
         return rand() % 11 + 10;
     }
+    
+    int attack(int bonusDamage) const {
+        int baseDamage = rand() % 11 + 10;
+        int totalDamage = baseDamage + bonusDamage;
+
+        cout << getName() << " attacks with damage: " << totalDamage;
+        if (bonusDamage > 0) {
+            cout << " (Bonus damage: " << bonusDamage << ")";
+        }
+        cout << endl;
+
+        return totalDamage;
+    }
 
     void takeDamage(int damage) override {
         if (defending) {
@@ -343,10 +356,18 @@ private:
                 for (GameEntity* entity : entities) {
                     NonPlayerCharacter* npc = dynamic_cast<NonPlayerCharacter*>(entity);
                     if (npc && !npc->isDefeated()) {
-                        int damage = player->attack();
-                        cout << player->getName() << " attacks " << entity->getName() << " with damage: " << damage << endl;
-                        entity->takeDamage(damage);
-                        cout << entity->getName() << "'s health: " << npc->getHealth() << endl;
+                        if(rand() % 2 == 0){
+                            int damage = player->attack();
+                            cout << player->getName() << " attacks " << entity->getName() << " with damage: " << damage << endl;
+                            entity->takeDamage(damage);
+                            cout << entity->getName() << "'s health: " << npc->getHealth() << endl;
+                        } else {
+                            int bonusDamage = (rand() % 2 == 0) ? rand() % 6 + 5 : 0; // 50% chance for bonus damage
+                            int damage = player->attack(bonusDamage);
+                            cout << player->getName() << " attacks " << entity->getName() << " with damage: " << damage + bonusDamage << endl;
+                            entity->takeDamage(damage);
+                            cout << entity->getName() << "'s health: " << npc->getHealth() << endl;
+                        }
                         if (entity->isDefeated()) {
                             cout << entity->getName() << " is defeated!" << endl;
                         }
